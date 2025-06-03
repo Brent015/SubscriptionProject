@@ -31,10 +31,11 @@ export const signUp = async (req, res, next) => {
         }], { session });
 
         const token = jwt.sign(
-            { userID: newUser[0].id },
+            { userId: newUser[0]._id },
             JWT_SECRET,
             { expiresIn: JWT_EXPIRES_IN }
         );
+        console.log(newUser[0]);
 
 
         await session.commitTransaction();

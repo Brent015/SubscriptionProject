@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import {JWT_SECRET} from "../config/env.js";
 import User from "../models/user.model.js";
+import mongoose from "mongoose";    
 
 const authorize = async (req, res, next) => {
     try {
@@ -16,8 +17,11 @@ const authorize = async (req, res, next) => {
         }
 
         const decoded = jwt.verify(token, JWT_SECRET);
+        console.log(decoded);
 
-        const user = await User.findById(decoded.userId);
+        const user = await User.findOne({ _id: decoded.userId });
+    
+        console.log(user, "user found in auth middleware");
 
         if (!user) {
             return res.status(401).json({
