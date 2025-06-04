@@ -1,7 +1,7 @@
 import Subscription from "../models/subscription.model.js";
 import {upstashWorkflowClient as workflowClient} from "../config/upstash.js";
 
-export const createSubscription = async (req, res) => {
+export const createSubscription = async (req, res, next) => {
     try{
         const subscription = await Subscription.create({
             ...req.body,
@@ -9,7 +9,7 @@ export const createSubscription = async (req, res) => {
         });
 
        const { workflowRunId } = await workflowClient.trigger({
-            url: `${SERVER_URL}/api/v1/workflows/subscriptions/reminder`,
+            url: `${SERVER_URL}/api/v1/workflow/subscriptions/reminder`,
             body: {
                 subscriptionId: subscription._id,
             },
@@ -26,7 +26,7 @@ export const createSubscription = async (req, res) => {
 }
 export const getUserSubscriptions = async (req, res, next) => {
     try{
-        if(req.user.id !== req.params.id) {
+        if(req.user.id.toString() !== req.params.id) {
             const error = new Error("Pashnea not your Account");
             error.statusCode = 401;
             throw error;
