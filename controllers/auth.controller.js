@@ -56,6 +56,62 @@ export const signUp = async (req, res, next) => {
     }
 };
 
-export const signIN = async (_req, _res, _next) => {};
+export const signIN = async (req, res, next) => {
+    try {
+        const { email, password } = req.body;
 
-export const signOut = async (_req, _res, _next) => {};
+        if (!email || !password) {
+            const error = new Error("Email and password muna tsong");
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            const error = new Error("Mali email Par");
+            error.statusCode = 401;
+            throw error;
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            const error = new Error("Mali Password Par");
+            error.statusCode = 401;
+            throw error;
+        }
+
+        const token = jwt.sign(
+            { userId: user._id },
+            JWT_SECRET,
+            { expiresIn: JWT_EXPIRES_IN }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Login successful",
+            data: {
+                token,
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email
+                }
+            }
+        });
+    } catch (error) {
+     next(error);
+    }
+};
+
+export const signOut = async (_req, _res, _next) => {
+        try {
+        res.status(200).json({
+            success: true,
+            message: "Logged out successfully"
+        });
+    } catch (error) {
+        next(error);
+    }
+
+};
+

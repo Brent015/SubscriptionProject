@@ -1,5 +1,6 @@
 import Subscription from "../models/subscription.model.js";
 import {upstashWorkflowClient as workflowClient} from "../config/upstash.js";
+import { SERVER_URL } from "../config/env.js";
 
 export const createSubscription = async (req, res, next) => {
     try{
@@ -26,7 +27,7 @@ export const createSubscription = async (req, res, next) => {
 }
 export const getUserSubscriptions = async (req, res, next) => {
     try{
-        if(req.user.id.toString() !== req.params.id) {
+        if(req.user._id.toString() !== req.params.id) {
             const error = new Error("Pashnea not your Account");
             error.statusCode = 401;
             throw error;

@@ -17,7 +17,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-//app.use (arcjetMiddleware);
+app.use (arcjetMiddleware);
 
 //makakapunta ka sa sign-up  through /api/v1/users/auth/sign-up
 app.use("/api/v1/users/auth", authRouter);
