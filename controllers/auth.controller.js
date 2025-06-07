@@ -105,12 +105,12 @@ export const signIN = async (req, res, next) => {
 
 export const signOut = async (_req, _res, _next) => {
         try {
-        res.status(200).json({
+        _res.status(200).json({
             success: true,
             message: "Logged out successfully"
         });
     } catch (error) {
-        next(error);
+    _next(error);
     }
 
 };

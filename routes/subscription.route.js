@@ -1,24 +1,61 @@
 import { Router } from "express";
 import { authorize } from "../middlewares/auth.middleware.js";
-import { createSubscription, getUserSubscriptions } from "../controllers/subscription.controller.js";
+import { 
+    createSubscription, 
+    getUserSubscriptions,
+    getAllSubscriptions,
+    getSubscriptionById,
+    updateSubscription,
+    deleteSubscription,
+    cancelSubscription
+} from "../controllers/subscription.controller.js";
 
 const subscriptionRouter = Router();
 
-subscriptionRouter.get("/", (req, res) => res.send("GET all subscriptions"));
+// All routes require authentication
+subscriptionRouter.use(authorize);
 
-subscriptionRouter.get("/:id", (req, res) => res.send("GET subscription details"));
+// GET all subscriptions for the authenticated user
+subscriptionRouter.get("/", getAllSubscriptions);
 
-subscriptionRouter.post("/", authorize, createSubscription);
+// GET specific subscription by ID
+subscriptionRouter.get("/:id", getSubscriptionById);
 
-subscriptionRouter.put("/", (req, res) => res.send("UPDATE all subscriptions"));   
+// POST create new subscription
+subscriptionRouter.post("/", createSubscription);
 
-subscriptionRouter.delete("/", (req, res) => res.send("DELETE a subscription"));
+// PUT update subscription
+subscriptionRouter.put("/:id", updateSubscription);
 
-subscriptionRouter.get("/user/:id", authorize, getUserSubscriptions);
+// DELETE subscription
+subscriptionRouter.delete("/:id", deleteSubscription);
 
-subscriptionRouter.put("/:id/cancel", (req, res) => res.send("CANCEL a subscription"));
+// GET subscriptions for a specific user (keeping your original route)
+subscriptionRouter.get("/user/:id", getUserSubscriptions);
 
-subscriptionRouter.get("/upcoming-renewals", (req, res) => res.send("GET upcoming renewals"));
-    
+// PUT cancel subscription (change status to cancelled)
+subscriptionRouter.put("/:id/cancel", cancelSubscription);
+
+// GET upcoming renewals for the authenticated user
+subscriptionRouter.get("/renewals/upcoming", async (req, res, next) => {
+    try {
+        const threeDaysFromNow = new Date();
+        threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
+
+        const upcomingRenewals = await Subscription.find({
+            user: req.user._id,
+            status: 'active',
+            renewalDate: { $lte: threeDaysFromNow }
+        }).sort({ renewalDate: 1 });
+
+        res.status(200).json({
+            success: true,
+            message: `Found ${upcomingRenewals.length} upcoming renewal(s)`,
+            data: upcomingRenewals
+        });
+    } catch (e) {
+        next(e);
+    }
+});
 
 export default subscriptionRouter;
