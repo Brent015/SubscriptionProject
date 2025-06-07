@@ -1,9 +1,6 @@
 import express from "express";
-
 import { PORT } from "./config/env.js"; 
-
 import authRouter from "./routes/auth.route.js";
-
 import userRouter from "./routes/user.routes.js";
 import subscriptionRouter from "./routes/subscription.route.js";
 import connectToDatabase from "./database/mongodb.js";
