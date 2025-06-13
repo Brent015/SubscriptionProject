@@ -1,4 +1,6 @@
+import mongoose from "mongoose"; // Added missing import
 import User from "../models/user.model.js";
+import Subscription from "../models/subscription.model.js"; // Added missing import
 
 export const getUsers = async (req, res, next) => {
     try {
@@ -39,6 +41,7 @@ export const getUser = async (req, res, next) => {
         next(error);
     }
 }
+
 export const deleteUser = async (req, res, next) => {
     const session = await mongoose.startSession();
     session.startTransaction();
