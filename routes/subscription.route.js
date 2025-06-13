@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authorize } from "../middlewares/auth.middleware.js";
-import { createSubscription, getUserSubscriptions, getAllSubscriptions,getSubscriptionById,updateSubscription,deleteSubscription,cancelSubscription} from "../controllers/subscription.controller.js";
+import { createSubscription, getUserSubscriptions, getAllSubscriptions,getSubscriptionById,updateSubscription,deleteSubscription,cancelSubscription, getAllUsersWithSubscriptions} from "../controllers/subscription.controller.js";
 
 const subscriptionRouter = Router();
 
@@ -12,6 +12,9 @@ subscriptionRouter.get("/", getAllSubscriptions);
 
 // GET specific subscription by ID
 subscriptionRouter.get("/:id", getSubscriptionById);
+
+//GET all users with subscription
+subscriptionRouter.get("/users/all", getAllUsersWithSubscriptions);
 
 // POST create new subscription
 subscriptionRouter.post("/", createSubscription);

@@ -185,15 +185,92 @@ export const cancelSubscription = async (req, res, next) => {
             throw error;
         }
 
-        subscription.status = 'cancelled';
-        await subscription.save();
+        subscription.status = "cancelled";
+        
+         const cancelSubscription = await Subscription.findByIdAndUpdate(
+            subscription._id,
+            {status:"cancelled"},
+            { new: true, runValidators: true })
 
         res.status(200).json({
             success: true,
             message: "Subscription cancelled successfully",
-            data: subscription
+            data: cancelSubscription
         });
     } catch (e) {
         next(e);
     }
 }
+// Admin only - get all users with subscriptions
+export const getAllUsersWithSubscriptions = async (req, res, next) => {
+    try {
+        const subscriptions = await Subscription.find({})
+            .populate('user', 'name email role')
+            .select('name price status renewalDate user category frequency');
+        
+        const usersWithSubscriptions = subscriptions.reduce((acc, sub) => {
+            const userId = sub.user._id.toString();
+            if (!acc[userId]) {
+                acc[userId] = {
+                    user: {
+                        id: sub.user._id,
+                        name: sub.user.name,
+                        email: sub.user.email,
+                        role: sub.user.role
+                    },
+                    subscriptions: []
+                };
+            }
+            acc[userId].subscriptions.push({
+                id: sub._id,
+                name: sub.name,
+                price: sub.price,
+                status: sub.status,
+                renewalDate: sub.renewalDate,
+                category: sub.category,
+                frequency: sub.frequency
+            });
+            return acc;
+        }, {});
+
+        res.status(200).json({
+            success: true,
+            message: `Found ${Object.keys(usersWithSubscriptions).length} users with subscriptions`,
+            data: Object.values(usersWithSubscriptions),
+            totalUsers: Object.keys(usersWithSubscriptions).length,
+            totalSubscriptions: subscriptions.length
+        });
+    } catch (e) {
+        next(e);
+    }
+};
+
+// Admin only - get subscription statistics
+export const getSubscriptionStatistics = async (req, res, next) => {
+    try {
+        const stats = await Subscription.aggregate([
+            {
+                $group: {
+                    _id: "$status",
+                    count: { $sum: 1 },
+                    totalRevenue: { $sum: "$price" }
+                }
+            }
+        ]);
+
+        const totalUsers = await User.countDocuments();
+        const usersWithSubscriptions = await Subscription.distinct("user").length;
+
+        res.status(200).json({
+            success: true,
+            data: {
+                subscriptionStats: stats,
+                totalUsers,
+                usersWithSubscriptions,
+                usersWithoutSubscriptions: totalUsers - usersWithSubscriptions
+            }
+        });
+    } catch (e) {
+        next(e);
+    }
+};

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { ADMIN_CREATION_KEY } from "../config/env.js";
 
 import { JWT_EXPIRES_IN, JWT_SECRET } from "../config/env.js";
 import User from "../models/user.model.js";
@@ -113,5 +114,60 @@ export const signOut = async (_req, _res, _next) => {
     _next(error);
     }
 
+};
+
+// for admin use
+export const createAdmin = async (req, res, next) => {
+    try {
+        const { name, email, password, adminKey } = req.body;
+        
+        // Add a secret admin key check
+        if (adminKey !== process.env.ADMIN_CREATION_KEY) {
+            return res.status(403).json({
+                success: false,
+                message: "Invalid admin creation key"
+            });
+        }
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(409).json({
+                success: false,
+                message: "User already exists"
+            });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const adminUser = await User.create({
+            name,
+            email,
+            password: hashedPassword,
+            role: "admin"
+        });
+
+        const token = jwt.sign(
+            { userId: adminUser._id },
+            JWT_SECRET,
+            { expiresIn: JWT_EXPIRES_IN }
+        );
+
+        res.status(201).json({
+            success: true,
+            message: "Admin user created successfully",
+            data: {
+                token,
+                user: {
+                    id: adminUser._id,
+                    name: adminUser.name,
+                    email: adminUser.email,
+                    role: adminUser.role
+                }
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
 };
 
