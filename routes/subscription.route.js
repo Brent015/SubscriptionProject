@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authorize } from "../middlewares/auth.middleware.js";
+import { requireAdmin } from "../middlewares/admin.middleware.js";
 import { createSubscription, getUserSubscriptions, getAllSubscriptions,getSubscriptionById,updateSubscription,deleteSubscription,cancelSubscription, getAllUsersWithSubscriptions} from "../controllers/subscription.controller.js";
 
 const subscriptionRouter = Router();
@@ -14,7 +15,7 @@ subscriptionRouter.get("/", getAllSubscriptions);
 subscriptionRouter.get("/:id", getSubscriptionById);
 
 //GET all users with subscription
-subscriptionRouter.get("/users/all", getAllUsersWithSubscriptions);
+subscriptionRouter.get("/users/all", requireAdmin, getAllUsersWithSubscriptions);
 
 // POST create new subscription
 subscriptionRouter.post("/", createSubscription);
