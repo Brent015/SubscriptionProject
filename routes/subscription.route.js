@@ -1,12 +1,28 @@
 import { Router } from "express";
 import { authorize } from "../middlewares/auth.middleware.js";
 import { requireAdmin } from "../middlewares/admin.middleware.js";
-import { createSubscription, getUserSubscriptions, getAllSubscriptions,getSubscriptionById,updateSubscription,deleteSubscription,cancelSubscription, getAllUsersWithSubscriptions} from "../controllers/subscription.controller.js";
+import { 
+    createSubscription, 
+    getUserSubscriptions, 
+    getAllSubscriptions,
+    getSubscriptionById,
+    updateSubscription,
+    deleteSubscription,
+    cancelSubscription, 
+    getAllUsersWithSubscriptions,
+    getSubscriptionStatistics,
+    searchSubscriptions,
+    adminSearchSubscriptions
+} from "../controllers/subscription.controller.js";
 
 const subscriptionRouter = Router();
 
 // All routes require authentication
 subscriptionRouter.use(authorize);
+
+// Search routes (must come before parameterized routes)
+subscriptionRouter.get("/search", searchSubscriptions);
+subscriptionRouter.get("/admin/search", requireAdmin, adminSearchSubscriptions);
 
 // GET all subscriptions for the authenticated user
 subscriptionRouter.get("/", getAllSubscriptions);
@@ -14,8 +30,9 @@ subscriptionRouter.get("/", getAllSubscriptions);
 // GET specific subscription by ID
 subscriptionRouter.get("/:id", getSubscriptionById);
 
-//GET all users with subscription
-subscriptionRouter.get("/users/all", requireAdmin, getAllUsersWithSubscriptions);
+// Admin routes
+subscriptionRouter.get("/admin/users", requireAdmin, getAllUsersWithSubscriptions);
+subscriptionRouter.get("/admin/statistics", requireAdmin, getSubscriptionStatistics);
 
 // POST create new subscription
 subscriptionRouter.post("/", createSubscription);
