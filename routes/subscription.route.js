@@ -21,7 +21,8 @@ const subscriptionRouter = Router();
 subscriptionRouter.use(authorize);
 
 // Search routes (must come before parameterized routes)
-subscriptionRouter.get("/search", searchSubscriptions);
+// OPTION 1: Make regular search admin-only too
+subscriptionRouter.get("/search", requireAdmin, searchSubscriptions);
 subscriptionRouter.get("/admin/search", requireAdmin, adminSearchSubscriptions);
 
 // GET all subscriptions for the authenticated user
