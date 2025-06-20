@@ -1,173 +1,102 @@
-import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import User from "../models/user.model.js";
+import { hashPassword, comparePasswords, generateToken, throwError } from "../middlewares/auth.middleware.js";
+import { withTransaction } from "../middlewares/auth.middleware.js";
 import { ADMIN_CREATION_KEY } from "../config/env.js";
 
-import { JWT_EXPIRES_IN, JWT_SECRET } from "../config/env.js";
-import User from "../models/user.model.js";
 
-export const signUp = async (req, res, next) => {
-        const session = await mongoose.startSession();  
-        session.startTransaction();
+// SIGN UP
+export const signUp = withTransaction(async (req, res, _next, session) => {
+  const { name, email, password } = req.body;
 
-    try{
+  if (await User.findOne({ email })) throwError("User already exists", 409);
 
-        const { name, email, password } = req.body;
-        const existingUser = await User.findOne({ email });
+  const hashed = await hashPassword(password);
 
-        if(existingUser){
-            const error = new Error("User already exists");
-            error.statusCode = 409;
-            throw error;
+  const [newUser] = await User.create(
+    [{ name, email, password: hashed }],
+    { session }
+  );
 
-        }
+  const token = generateToken(newUser._id);
 
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+  res.status(201).json({
+    success: true,
+    message: "User created successfully",
+    data: { token, user: newUser },
+  });
+});
 
-        const newUser =await User.create([{
-            name,
-            email,
-            password: hashedPassword
-        }], { session });
-
-        const token = jwt.sign(
-            { userId: newUser[0]._id },
-            JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
-        );
-        console.log(newUser[0]);
-
-
-        await session.commitTransaction();
-        session.endSession();
-
-        res.status(201).json({
-            success: true,
-            message : "User created successfully",
-            data: {
-                token,
-                user: newUser[0],
-            }
-        });
-    } catch (error) {
-        session.abortTransaction();
-        session.endSession();
-        next(error);
-    }
-};
-
+// SIGN IN
 export const signIN = async (req, res, next) => {
-    try {
-        const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) throwError("Email and password are required", 400);
 
-        if (!email || !password) {
-            const error = new Error("Email and password muna tsong");
-            error.statusCode = 400;
-            throw error;
-        }
+    const user = await User.findOne({ email });
+    if (!user) throwError("Invalid email", 401);
 
-        const user = await User.findOne({ email });
-        if (!user) {
-            const error = new Error("Mali email Par");
-            error.statusCode = 401;
-            throw error;
-        }
+    const valid = await comparePasswords(password, user.password);
+    if (!valid) throwError("Invalid password", 401);
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            const error = new Error("Mali Password Par");
-            error.statusCode = 401;
-            throw error;
-        }
+    const token = generateToken(user._id);
 
-        const token = jwt.sign(
-            { userId: user._id },
-            JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
-        );
-
-        res.status(200).json({
-            success: true,
-            message: "Login successful",
-            data: {
-                token,
-                user: {
-                    _id: user._id,
-                    name: user.name,
-                    email: user.email
-                }
-            }
-        });
-    } catch (error) {
-     next(error);
-    }
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: {
+        token,
+        user: { _id: user._id, name: user.name, email: user.email },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const signOut = async (_req, _res, _next) => {
-        try {
-        _res.status(200).json({
-            success: true,
-            message: "Logged out successfully"
-        });
-    } catch (error) {
-    _next(error);
-    }
-
+// SIGN OUT
+export const signOut = (_req, res, _next) => {
+  res.status(200).json({
+    success: true,
+    message: "Logged out successfully",
+  });
 };
 
-// for admin use
+// CREATE ADMIN
 export const createAdmin = async (req, res, next) => {
-    try {
-        const { name, email, password, adminKey } = req.body;
-        
-        // Add a secret admin key check
-        if (adminKey !== process.env.ADMIN_CREATION_KEY) {
-            return res.status(403).json({
-                success: false,
-                message: "Invalid admin creation key"
-            });
-        }
+  try {
+    const { name, email, password, adminKey } = req.body;
 
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(409).json({
-                success: false,
-                message: "User already exists"
-            });
-        }
-
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        const adminUser = await User.create({
-            name,
-            email,
-            password: hashedPassword,
-            role: "admin"
-        });
-
-        const token = jwt.sign(
-            { userId: adminUser._id },
-            JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
-        );
-
-        res.status(201).json({
-            success: true,
-            message: "Admin user created successfully",
-            data: {
-                token,
-                user: {
-                    id: adminUser._id,
-                    name: adminUser.name,
-                    email: adminUser.email,
-                    role: adminUser.role
-                }
-            }
-        });
-    } catch (error) {
-        next(error);
+    if (adminKey !== ADMIN_CREATION_KEY) {
+      return res.status(403).json({ success: false, message: "Invalid admin creation key" });
     }
-};
 
+    if (await User.findOne({ email })) throwError("User already exists", 409);
+
+    const hashed = await hashPassword(password);
+
+    const adminUser = await User.create({
+      name,
+      email,
+      password: hashed,
+      role: "admin",
+    });
+
+    const token = generateToken(adminUser._id);
+
+    res.status(201).json({
+      success: true,
+      message: "Admin user created successfully",
+      data: {
+        token,
+        user: {
+          id: adminUser._id,
+          name: adminUser.name,
+          email: adminUser.email,
+          role: adminUser.role,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
