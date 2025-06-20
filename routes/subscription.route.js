@@ -11,7 +11,6 @@ import {
     cancelSubscription, 
     getAllUsersWithSubscriptions,
     getSubscriptionStatistics,
-    searchSubscriptions,
     adminSearchSubscriptions
 } from "../controllers/subscription.controller.js";
 
@@ -21,8 +20,8 @@ const subscriptionRouter = Router();
 subscriptionRouter.use(authorize);
 
 // Search routes (must come before parameterized routes)
-// OPTION 1: Make regular search admin-only too
-subscriptionRouter.get("/search", requireAdmin, searchSubscriptions);
+// Make regular search admin-only too
+
 subscriptionRouter.get("/admin/search", requireAdmin, adminSearchSubscriptions);
 
 // GET all subscriptions for the authenticated user
