@@ -261,7 +261,7 @@ export const getSubscriptionStatistics = async (req, res, next) => {
         ]);
 
         const totalUsers = await User.countDocuments();
-        const usersWithSubscriptions = await Subscription.distinct("user").length;
+        const usersWithSubscriptions = (await Subscription.distinct("user")).length;
 
         res.status(200).json({
             success: true,
@@ -397,7 +397,11 @@ export const adminSearchSubscriptions = async (req, res, next) => {
                     from: "users",
                     localField: "user",
                     foreignField: "_id",
-                    as: "user"
+                    as: "user",
+                //exclude password from lookup
+                    pipeline: [
+                        { $project: { password: 0 } } // Exclude password field
+                    ]
                 }
             },
             { $unwind: "$user" }
