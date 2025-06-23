@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import {JWT_SECRET, JWT_EXPIRES_IN} from "../config/env.js";
 import User from "../models/user.model.js";
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const authorize = async (req, res, next) => {
     try {
