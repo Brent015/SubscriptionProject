@@ -19,37 +19,14 @@ const subscriptionRouter = Router();
 // All routes require authentication
 subscriptionRouter.use(authorize);
 
-// Search routes (must come before parameterized routes)
-// Make regular search admin-only too
-
+// IMPORTANT: More specific routes MUST come before parameterized routes
+// Admin routes (most specific first)
 subscriptionRouter.get("/admin/search", requireAdmin, adminSearchSubscriptions);
-
-// GET all subscriptions for the authenticated user
-subscriptionRouter.get("/", getAllSubscriptions);
-
-// GET specific subscription by ID
-subscriptionRouter.get("/:id", getSubscriptionById);
-
-// Admin routes
 subscriptionRouter.get("/admin/users", requireAdmin, getAllUsersWithSubscriptions);
 subscriptionRouter.get("/admin/statistics", requireAdmin, getSubscriptionStatistics);
 
-// POST create new subscription
-subscriptionRouter.post("/", createSubscription);
-
-// PUT update subscription
-subscriptionRouter.put("/:id", updateSubscription);
-
-// DELETE subscription
-subscriptionRouter.delete("/:id", deleteSubscription);
-
-// GET subscriptions for a specific user (keeping your original route)
+// User-specific routes (specific patterns)
 subscriptionRouter.get("/user/:id", getUserSubscriptions);
-
-// PUT cancel subscription (change status to cancelled)
-subscriptionRouter.put("/:id/cancel", cancelSubscription);
-
-// GET upcoming renewals for the authenticated user
 subscriptionRouter.get("/renewals/upcoming", async (req, res, next) => {
     try {
         const threeDaysFromNow = new Date();
@@ -70,5 +47,23 @@ subscriptionRouter.get("/renewals/upcoming", async (req, res, next) => {
         next(e);
     }
 });
+
+// General routes
+subscriptionRouter.get("/", getAllSubscriptions);
+
+// Parameterized routes (MUST come last)
+subscriptionRouter.get("/:id", getSubscriptionById);
+
+// POST create new subscription
+subscriptionRouter.post("/", createSubscription);
+
+// PUT update subscription
+subscriptionRouter.put("/:id", updateSubscription);
+
+// DELETE subscription
+subscriptionRouter.delete("/:id", deleteSubscription);
+
+// PUT cancel subscription (change status to cancelled)
+subscriptionRouter.put("/:id/cancel", cancelSubscription);
 
 export default subscriptionRouter;

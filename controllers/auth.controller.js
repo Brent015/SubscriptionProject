@@ -1,5 +1,5 @@
 import User from "../models/user.model.js";
-import { hashPassword, comparePasswords, generateToken, throwError } from "../middlewares/auth.middleware.js";
+import { hashPassword, comparePasswords, generateToken, throwError } from "../utils/helper.js";
 import { withTransaction } from "../middlewares/auth.middleware.js";
 import { ADMIN_CREATION_KEY } from "../config/env.js";
 

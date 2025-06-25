@@ -300,87 +300,82 @@ export const adminSearchSubscriptions = async (req, res, next) => {
             sortOrder = 'desc'
         } = req.query;
 
-        // Build the search query (no user restriction for admin)
         let searchQuery = {};
 
-        // User-specific filters
-        if (userId) {
-            searchQuery.user = userId;
-        }
+        // Simple field filters (direct match or user field)
+        const simpleFilters = [
+            { field: 'user', value: userId },
+        ];
 
-        // Category filter
-        if (category) {
-            if (Array.isArray(category)) {
-                searchQuery.category = { $in: category };
-            } else {
-                searchQuery.category = category;
-            }
-        }
+        // Array/single value filters (support both array and single values)
+        const arrayFilters = [
+            { field: 'category', value: category },
+            { field: 'status', value: status },
+            { field: 'currency', value: currency },
+            { field: 'frequency', value: frequency }
+        ];
 
-        // Status filter
-        if (status) {
-            if (Array.isArray(status)) {
-                searchQuery.status = { $in: status };
-            } else {
-                searchQuery.status = status;
-            }
-        }
+        // Regex filters (case-insensitive search)
+        const regexFilters = [
+            { field: 'paymentMethod', value: paymentMethod }
+        ];
 
-        // Payment method filter
-        if (paymentMethod) {
-            searchQuery.paymentMethod = { $regex: paymentMethod, $options: 'i' };
-        }
+        // Range filters
+        const rangeFilters = [
+            {
+                field: 'price',
+                min: minPrice,
+                max: maxPrice,
+                parser: parseFloat
+            },
+            {
+                field: 'startDate',
+                min: startDate,
+                max: endDate,
+                parser: (val) => new Date(val)
+            },
+            {
+                field: 'renewalDate',
+                min: renewalStartDate,
+                max: renewalEndDate,
+                parser: (val) => new Date(val)
+            }
+        ];
 
-        // Currency filter
-        if (currency) {
-            if (Array.isArray(currency)) {
-                searchQuery.currency = { $in: currency };
-            } else {
-                searchQuery.currency = currency;
+        // Apply simple filters
+        simpleFilters.forEach(({ field, value }) => {
+            if (value) {
+                searchQuery[field] = value;
             }
-        }
+        });
 
-        // Frequency filter
-        if (frequency) {
-            if (Array.isArray(frequency)) {
-                searchQuery.frequency = { $in: frequency };
-            } else {
-                searchQuery.frequency = frequency;
+        // Apply array/single value filters
+        arrayFilters.forEach(({ field, value }) => {
+            if (value) {
+                searchQuery[field] = Array.isArray(value) ? { $in: value } : value;
             }
-        }
+        });
 
-        // Price range filter
-        if (minPrice !== undefined || maxPrice !== undefined) {
-            searchQuery.price = {};
-            if (minPrice !== undefined) {
-                searchQuery.price.$gte = parseFloat(minPrice);
+        // Apply regex filters
+        regexFilters.forEach(({ field, value }) => {
+            if (value) {
+                searchQuery[field] = { $regex: value, $options: 'i' };
             }
-            if (maxPrice !== undefined) {
-                searchQuery.price.$lte = parseFloat(maxPrice);
-            }
-        }
+        });
 
-        // Date range filters
-        if (startDate || endDate) {
-            searchQuery.startDate = {};
-            if (startDate) {
-                searchQuery.startDate.$gte = new Date(startDate);
+        // Apply range filters
+        rangeFilters.forEach(({ field, min, max, parser }) => {
+            if (min !== undefined || max !== undefined) {
+                searchQuery[field] = {};
+                if (min !== undefined) {
+                    searchQuery[field].$gte = parser(min);
+                }
+                if (max !== undefined) {
+                    searchQuery[field].$lte = parser(max);
+                }
             }
-            if (endDate) {
-                searchQuery.startDate.$lte = new Date(endDate);
-            }
-        }
-
-        if (renewalStartDate || renewalEndDate) {
-            searchQuery.renewalDate = {};
-            if (renewalStartDate) {
-                searchQuery.renewalDate.$gte = new Date(renewalStartDate);
-            }
-            if (renewalEndDate) {
-                searchQuery.renewalDate.$lte = new Date(renewalEndDate);
-            }
-        }
-
+        });
+       
         // Pagination
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
@@ -411,7 +406,7 @@ export const adminSearchSubscriptions = async (req, res, next) => {
         if (userEmail) {
             pipeline.push({
                 $match: {
-                    "user.email": { $regex: userEmail, $options: 'i' }
+                    "user.email": { $regex: userEmail, $options: 'i' }  //regex is used to search,match or manipulate strings using patterns
                 }
             });
         }

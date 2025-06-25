@@ -1,8 +1,7 @@
-import jwt from "jsonwebtoken";
-import {JWT_SECRET, JWT_EXPIRES_IN} from "../config/env.js";
+import {JWT_SECRET} from "../config/env.js";
 import User from "../models/user.model.js";
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const authorize = async (req, res, next) => {
     try {
@@ -55,29 +54,6 @@ const authorize = async (req, res, next) => {
             error: error.message
         });
     }
-};
-
-// Hash password
-export const hashPassword = async (password) => {
-  const salt = await bcrypt.genSalt(10);
-  return bcrypt.hash(password, salt);
-};
-
-// Compare password
-export const comparePasswords = async (plain, hashed) => {
-  return bcrypt.compare(plain, hashed);
-};
-
-// Generate JWT token
-export const generateToken = (userId) => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-};
-
-// Throw HTTP error
-export const throwError = (message, statusCode = 400) => {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  throw error;
 };
 
 export const withTransaction = (handler) => async (req, res, next) => {
