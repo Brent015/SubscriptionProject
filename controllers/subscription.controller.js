@@ -280,9 +280,28 @@ export const getSubscriptionStatistics = async (req, res, next) => {
 // Admin search - allows admins to search across all users' subscriptions
 export const adminSearchSubscriptions = async (req, res, next) => {
     try {
+        // Validate query parameters
+          const allowedParams = [
+  'category', 'status', 'paymentMethod', 'currency', 'frequency',
+  'minPrice', 'maxPrice', 'startDate', 'endDate',
+  'renewalStartDate', 'renewalEndDate', 'userId', 'userEmail',
+  'page', 'limit', 'sortBy', 'sortOrder'
+];
+
+const invalidParams = Object.keys(req.query).filter(
+  (key) => !allowedParams.includes(key)
+);
+
+if (invalidParams.length > 0) {
+  return res.status(400).json({
+    success: false,
+    message: `Invalid query parameter(s): ${invalidParams.join(', ')}`
+  });
+}
+
         const {
             category,
-            status,
+            status, 
             paymentMethod,
             currency,
             frequency,
@@ -399,7 +418,7 @@ export const adminSearchSubscriptions = async (req, res, next) => {
                     ]
                 }
             },
-            { $unwind: "$user" }
+            { $unwind: "$user" } //para maging single object lang instead of array
         ];
 
         // Add email filter if provided
