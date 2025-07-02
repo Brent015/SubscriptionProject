@@ -9,6 +9,7 @@ import cookieParser from "cookie-parser";
 import arcjetMiddleware from "./middlewares/arcjet.middleware.js";
 import workflowRouter from "./routes/workflow.routes.js"; 
 import { requireAdmin } from './middlewares/admin.middleware.js';
+import familySubscriptionRouter from "./routes/familySubscription.route.js";
 
 const app = express();
 
@@ -26,6 +27,8 @@ app.use("/api/v1/users", userRouter);
 app.use("/api/v1/subscriptions", subscriptionRouter);
 
 app.use("/api/v1/users/workflow", workflowRouter);
+
+app.use("/api/v1/family-subscriptions",familySubscriptionRouter);
 
 app.use(errorMiddleware);
 

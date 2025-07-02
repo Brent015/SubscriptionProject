@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import {JWT_EXPIRES_IN} from "../config/env.js";
+import {JWT_EXPIRES_IN, JWT_SECRET} from "../config/env.js";
 
 // Hash password
 export const hashPassword = async (password) => {
