@@ -79,7 +79,8 @@ familySubscriptionSchema.methods.isMember = function(userId) {
 
 // Method to check if user is owner
 familySubscriptionSchema.methods.isOwner = function(userId) {
-    return this.owner.toString() === userId.toString();
+    const ownerId = this.owner._id || this.owner;
+    return ownerId.toString() === userId.toString();
 };
 
 // Method to check if user has access (owner or active member)

@@ -118,6 +118,18 @@ export const inviteFamilyMember = async (req, res, next) => {
         const familySubscription = await FamilySubscription.findOne({ 
             subscription: subscriptionId 
         }).populate('subscription owner');
+
+        //pang debug lang 
+        console.log('=== DEBUG FAMILY SUBSCRIPTION ===');
+console.log('familySubscription found:', !!familySubscription);
+console.log('familySubscription.owner:', familySubscription.owner);
+console.log('familySubscription.owner._id:', familySubscription.owner._id);
+console.log('req.user:', req.user);
+console.log('req.user._id:', req.user._id);
+console.log('Owner toString:', familySubscription.owner.toString());
+console.log('User toString:', req.user._id.toString());
+console.log('isOwner result:', familySubscription.isOwner(req.user._id));
+console.log('================================');
         
         if (!familySubscription) {
             return res.status(404).json({
