@@ -119,18 +119,6 @@ export const inviteFamilyMember = async (req, res, next) => {
             subscription: subscriptionId 
         }).populate('subscription owner');
 
-        //pang debug lang 
-        console.log('=== DEBUG FAMILY SUBSCRIPTION ===');
-console.log('familySubscription found:', !!familySubscription);
-console.log('familySubscription.owner:', familySubscription.owner);
-console.log('familySubscription.owner._id:', familySubscription.owner._id);
-console.log('req.user:', req.user);
-console.log('req.user._id:', req.user._id);
-console.log('Owner toString:', familySubscription.owner.toString());
-console.log('User toString:', req.user._id.toString());
-console.log('isOwner result:', familySubscription.isOwner(req.user._id));
-console.log('================================');
-        
         if (!familySubscription) {
             return res.status(404).json({
                 success: false,
@@ -194,7 +182,10 @@ console.log('================================');
         // Generate invite token
         const inviteToken = crypto.randomBytes(32).toString('hex');
         const inviteExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
         
+        
+
         // Add member to family subscription
         familySubscription.members.push({
             user: inviteeUser._id,
@@ -452,7 +443,8 @@ export const getUserFamilySubscriptions = async (req, res, next) => {
             isActive: true
         }).populate([
             { path: 'subscription', select: 'name price currency frequency category status' },
-            { path: 'members.user', select: 'name email' }
+            { path: 'members.user', select: 'name email' },
+            {path: 'owner', select: 'name email' }
         ]);
         
         // Find subscriptions where user is a member
